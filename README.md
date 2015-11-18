@@ -20,7 +20,7 @@ New ratings can be created as follows:
     Glicko::Rating rating(1500, 310, 0.04)
 ```
 
-In the Glicko rating system, player ratings are updated in batches. As described in the [Glicko-2 paper](http://www.glicko.net/glicko/glicko2.pdf), the ideal number of games in a rating period is 10-15. As such, the primary method for updating a rating is the `Glicko::Rating::Update` method. This arugments to the `Update` method are a game count, an array of opponent ratings and the outcome of the games. As per the Glicko-2 paper, a victor has the score `1.0`, a draw is scored as `0.5` and a loss is `0.0`.
+In the Glicko rating system, player ratings are updated in batches. As described in the [Glicko-2 paper](http://www.glicko.net/glicko/glicko2.pdf), the ideal number of games in a rating period is 10-15. As such, the primary method for updating a rating is the `Glicko::Rating::Update` method. The arguments to the `Update` method are two containers, one containing the players and the other the results. As per the Glicko-2 paper, a victor has the score `1.0`, a draw is scored as `0.5` and a loss is `0.0`.
 
 For example:
 
@@ -34,8 +34,8 @@ For example:
     Glicko::Rating opponent3(1700, 300);
 
     // Update the ratings from the 3 games
-    Glicko::Rating opponents[3] = {opponent1, opponent2, opponent3};
-    double outcomes[3] = {1.0, 0.0, 0.0};
+    std::array<Glicko::Rating, 3> opponents{opponent1, opponent2, opponent3};
+    std::array<double,3> outcomes{1.0, 0.0, 0.0};
     player.Update(3, opponents, outcomes);
     player.Apply();
 ```
@@ -73,7 +73,7 @@ After calling `Update` or `Decay`, the changes must be applied using the `Glicko
 The following features are on my todo list, and will be implemented when I have time.
 * Example usage of the rating system, such as chess-like applications and team based application
 * Configuration of floating point types at compiler time, e.g. prefering `float` over `double`
-* Better std library conformance, e.g an overload for `Update` that uses `std::vector`
+* ~~Better std library conformance, e.g an overload for `Update` that uses `std::vector`~~
 
 # License
 This implementation of the Glicko-2 rating system is distributed under [The MIT License](https://opensource.org/licenses/MIT).

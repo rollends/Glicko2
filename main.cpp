@@ -1,4 +1,5 @@
 #include <iostream>
+#include <array>
 
 #include "glicko/rating.hpp"
 
@@ -14,11 +15,11 @@ int main(int argc, char** argv)
     Glicko::Rating player3(1700, 300);
 
     // Simulate 3 games and update the ratings
-    Glicko::Rating players[3] = {player1, player2, player3};
-    double scores[3] = {1.0, 0.0, 0.0};
-    player.Update(3, players, scores);
+    std::array< Glicko::Rating, 3 > players{ player1, player2, player3 };
+    std::array< double, 3 > scores{1.0, 0.0, 0.0};
+    player.Update(players, scores);
     player.Apply();
-    
+
     std::cout << player << std::endl;
 
     return 0;

@@ -4,8 +4,11 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <iostream>
+#include <algorithm>
+#include <tuple>
 
 #include "glicko/config.hpp"
+#include "glicko/stdutil.hpp"
 
 namespace Glicko
 {
@@ -23,16 +26,69 @@ namespace Glicko
 
         /// Constructs a rating from another rating instance
         Rating(const Rating& rating);
-        
+
         /// Updates the rating based on a set of games
-        void Update(const int m, const Rating* opponents, const double* score);
+        template<
+                    class RatingContainer,
+                    class ScoreContainer,
+                    typename = std::enable_if_t< type_util::is_forward_iterable< RatingContainer >::value >,
+                    typename = std::enable_if_t< type_util::is_forward_iterable< ScoreContainer >::value >
+                >
+        void Update( RatingContainer const & opponents, ScoreContainer const & score )
+        {
+            unsigned long constexpr G = 0;
+            unsigned long constexpr E = 1;
+            using TableRow = std::tuple< double, double >;
+            std::vector<TableRow> geTable;
+
+            auto FormTable = [this]( Rating const & b ){ return std::make_tuple( b.G(), b.E(b.G(), *this) ); };
+            auto AddInvV =
+                [](double acc,TableRow pair){
+                    double g = std::get<G>(pair);
+                    double e = std::get<E>(pair);
+                    return acc + g * g * e * (1.0 - e);
+                };
+            auto AddDInner =
+                [](TableRow gepair, double score) {
+                    return std::get<G>(gepair) * (score - std::get<E>(gepair));
+                };
+
+            // Initialize the g,e table
+            std::transform( opponents.cbegin(), opponents.cend(), std::back_inserter( geTable ), FormTable );
+
+            // accumulate results into invV.
+            double invV = std::accumulate( geTable.cbegin(), geTable.cend(), 0.0, AddInvV );
+
+            // Invert the v value
+            double v = 1.0 / invV;
+
+            // Compute the delta value from the g, e, and v
+            // values
+            double dInner =
+                std::inner_product(
+                    geTable.cbegin(),
+                    geTable.cend(),
+                    score.cbegin(),
+                    0.0,
+                    std::plus<double>(),
+                    AddDInner
+                );
+
+            // Apply the v value to the delta
+            double d = v * dInner;
+
+            // Compute new rating, deviation and volatility values
+            sPrime = exp(Convergence(d, v, p, s)/2.0);
+            pPrime = 1.0 / sqrt((1.0/(p*p + sPrime*sPrime)) + invV);
+            uPrime = u + pPrime * pPrime * dInner;
+        }
 
         // Updates the rating based on a single game
         void Update(const Rating& opponent, const double score);
 
         // Decays the rating deviation
         void Decay();
-        
+
         /// Applies the updated ratings
         void Apply();
 
@@ -67,7 +123,7 @@ namespace Glicko
             pStream << "[" << pRating.Rating1()
                     << ":" << pRating.Deviation1()
                     << "]";
-            
+
             return pStream;
         }
 

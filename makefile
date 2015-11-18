@@ -1,7 +1,7 @@
 IDIR=./
 CC=g++
-CFLAGS=-I$(IDIR)
-PLAIN_OBJ = main.o glicko/rating.o 
+CFLAGS=-I$(IDIR) -std=c++14
+PLAIN_OBJ = main.o glicko/rating.o
 
 %.o: %.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)

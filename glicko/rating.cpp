@@ -18,46 +18,6 @@ Rating::Rating(const Rating& rating)
     s = rating.s;
 }
 
-void Rating::Update(const int m, const Rating* opponents, const double* score)
-{
-    double gTable[m];
-    double eTable[m];
-    double invV = 0.0;
-
-    // Compute the g and e values for each opponent and 
-    // accumulate the results into the v value
-    for (int j = 0; j < m; j++)
-    {
-        const Rating& opponent = opponents[j];
-
-        double g = opponent.G();
-        double e = opponent.E(g, *this);
-
-        gTable[j] = g;
-        eTable[j] = e;
-        invV += g * g * e * (1.0 - e); 
-    }
-
-    // Invert the v value
-    double v = 1.0 / invV;
-
-    // Compute the delta value from the g, e, and v
-    // values
-    double dInner = 0.0;
-    for (int j = 0; j < m; j++)
-    {
-        dInner += gTable[j] * (score[j] - eTable[j]);
-    }
-
-    // Apply the v value to the delta
-    double d = v * dInner;
-
-    // Compute new rating, deviation and volatility values
-    sPrime = exp(Convergence(d, v, p, s)/2.0);
-    pPrime = 1.0 / sqrt((1.0/(p*p + sPrime*sPrime)) + invV);
-    uPrime = u + pPrime * pPrime * dInner;
-}
-
 void Rating::Update(const Rating& opponent, const double score)
 {
     // Compute the e and g function values
